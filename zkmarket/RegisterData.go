@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/consensys/gnark-crypto/ecc"
+	"github.com/consensys/gnark-crypto/ecc/bn254/fp"
 
-	MIMC "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
-	"github.com/consensys/gnark/backend/groth16"
+	// MIMC "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
+	groth16 "github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
-	"github.com/consensys/gnark/std/hash/mimc"
 )
 
 func main() {
@@ -20,19 +20,19 @@ func main() {
 	// groth16 zkSNARK: Setup
 	pk, vk, _ := groth16.Setup(r1cs)
 
-	mimc := MIMC.NewMiMC()
-	data := []byte("11")
+	var cat1 fp.Element
+	cat1.SetRandom()
+	fmt.Println(cat1)
+	var cat2 fp.Element
+	cat2.SetRandom()
+	fmt.Println(cat2)
+	var cat3 fp.Element
+	cat3.Mul(&cat1, &cat2)
+	fmt.Println(cat3)
 
-	// var arr [3]byte
-	// for i := 0; i < arr.Len(); i++ {
-	// 	arr.Push(data)
-	// }
-
-	mimc.Write(data)
-	test := mimc.Sum(nil)
-
-	assignment := MyCircuit{witness{A: 2, B: 3, Hash_input: data}, statement{C: 6, Hash_output: test}}
+	assignment := MyCircuit{witness{A: cat1, B: cat2}, statement{C: cat3}}
 	witness, _ := frontend.NewWitness(&assignment, ecc.BN254.ScalarField())
+	fmt.Println(witness)
 	publicWitness, _ := witness.Public()
 
 	proof, _ := groth16.Prove(r1cs, pk, witness)
@@ -47,32 +47,23 @@ type MyCircuit struct {
 }
 
 type statement struct {
-	C           frontend.Variable `gnark:",public"`
-	Hash_output frontend.Variable `gnark:",public"`
+	C fp.Element `gnark:",public"`
 }
 
 type witness struct {
 	//statement
-	A          frontend.Variable
-	B          frontend.Variable
-	Hash_input frontend.Variable
+	A fp.Element
+	B fp.Element
 }
 
 // Relation
 func (circuit *MyCircuit) Define(api frontend.API) error {
 
 	// tool
-	mimc, _ := mimc.NewMiMC(api)
 
 	// ... see Circuit API section
 	Check_C := api.Mul(circuit.W.A, circuit.W.B)
 	api.AssertIsEqual(circuit.S.C, Check_C)
-
-	for i := 0; i < 1000; i++ {
-		mimc.Write(circuit.W.Hash_input)
-		api.AssertIsEqual(circuit.S.Hash_output, mimc.Sum())
-		mimc.Reset()
-	}
 
 	// ??
 	return nil

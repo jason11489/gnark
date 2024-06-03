@@ -22,16 +22,6 @@ func main() {
 	// groth16 zkSNARK: Setup
 	pk, vk, _ := groth16.Setup(r1cs)
 
-	// var cat1 fp.Element
-	// cat1.SetRandom()
-	// // fmt.Println(cat1)
-	// var cat2 fp.Element
-	// cat2.SetRandom()
-	// // fmt.Println(cat2)
-	// var cat3 fp.Element
-	// cat3.Mul(&cat1, &cat2)
-	// // fmt.Println(cat3)
-
 	aElement := fp.NewElement(2)
 	bElement := fp.NewElement(3)
 	cElement := fp.NewElement(6)
@@ -43,7 +33,7 @@ func main() {
 	bElement.BigInt(bValue)
 	cElement.BigInt(cValue)
 
-	assignment := MyCircuit{witness{A: aValue, B: bValue}, statement{C: cValue}}
+	assignment := MyCircuit{witness{A: fp.Element.Assign(aValue), B: bValue}, statement{C: cValue}}
 	witness, _ := frontend.NewWitness(&assignment, ecc.BN254.ScalarField())
 	fmt.Println(witness)
 	publicWitness, _ := witness.Public()
@@ -60,13 +50,13 @@ type MyCircuit struct {
 }
 
 type statement struct {
-	C frontend.Variable `gnark:",public"`
+	C fp.Element `gnark:",public"`
 }
 
 type witness struct {
 	//statement
-	A frontend.Variable
-	B frontend.Variable
+	A fp.Element
+	B fp.Element
 }
 
 // Relation
@@ -80,18 +70,19 @@ func (circuit *MyCircuit) Define(api frontend.API) error {
 
 	// teat := fp.NewElement(circuit.W.A)
 	var A fp.Element
-	A.SetInterface(circuit.W.A)
+	_, err := A.SetInterface(circuit.W.A)
 	var B fp.Element
 	B.SetInterface(circuit.W.B)
 	var C fp.Element
 	C.SetInterface(circuit.S.C)
+
+	api.Println(err)
 
 	fmt.Printf("t1: %s\n", reflect.TypeOf(circuit.W.A))
 
 	Check_C := api.Mul(A, B)
 	api.AssertIsEqual(C, Check_C)
 
-	api.Println(Check_C)
 	// api.Println(circuit.W.B)
 
 	fmt.Println("Relation finish")

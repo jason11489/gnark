@@ -67,13 +67,16 @@ type MyCircuit[T emulated.FieldParams] struct {
 }
 
 type statement[T emulated.FieldParams] struct {
-	C emulated.Element[T] `gnark:",public"`
+	h_ct emulated.Element[T] `gnark:",public"`
+	h_k  emulated.Element[T] `gnark:",public"`
+	ENA  emulated.Element[T] `gnark:",public"`
 }
 
 type witness[T emulated.FieldParams] struct {
 	//statement
-	A emulated.Element[T]
-	B emulated.Element[T]
+	data    []emulated.Element[T]
+	CT_data []emulated.Element[T]
+	k_data  emulated.Element[T]
 }
 
 // Relation
@@ -88,7 +91,7 @@ func (circuit *MyCircuit[T]) Define(api frontend.API) error {
 	C := Fp_api.NewElement(circuit.S.C)
 	api.Println(A)
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		Check_C := Fp_api.Add(A, B)
 		Fp_api.AssertIsEqual(C, Check_C)
 	}

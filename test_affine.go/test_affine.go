@@ -17,13 +17,10 @@ import (
 func main() {
 	fmt.Println("Hello World")
 	var Circuit MyCircuit[emulated.BN254Fp]
-	r1cs,
-		_ := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &Circuit)
+	r1cs, _ := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &Circuit)
 
 	// groth16 zkSNARK: Setup
-	pk,
-		vk,
-		_ := groth16.Setup(r1cs)
+	pk, vk, _ := groth16.Setup(r1cs)
 
 	aElement := fp.NewElement(2)
 	bElement := fp.NewElement(3)
